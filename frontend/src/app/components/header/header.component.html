@@ -1,0 +1,40 @@
+<!-- Header Principal -->
+<header class="main-header">
+  <div class="header-content">
+    <!-- Logo e Nome -->
+    <div class="logo-section" (click)="goHome()" style="cursor: pointer;">
+      <div class="logo">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h1 class="logo-text">Solicitação PMERJ</h1>
+    </div>
+
+    <!-- Perfil do Usuário -->
+    <div class="user-section">
+      <div class="a11y-actions">
+        <button class="a11y-btn" (click)="toggleContrast()" title="Alto contraste"><i class="fas fa-adjust"></i></button>
+        <button class="a11y-btn" (click)="toggleFont()" title="Fonte ampliada"><i class="fas fa-text-height"></i></button>
+      </div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          <div class="avatar-icon"><i class="fas fa-user"></i></div>
+        </div>
+        <div class="user-info">
+          <div class="user-name">{{ userName }}</div>
+          <div class="user-role">{{ userRole }}</div>
+        </div>
+        <button *ngIf="isLoggedIn; else loginTpl" class="logout-button" (click)="logout()"><i class="fas fa-sign-out-alt"></i></button>
+        <ng-template #loginTpl>
+          <button class="logout-button" (click)="goLogin()"><i class="fas fa-sign-in-alt"></i></button>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Navegação -->
+  <nav class="nav-bar">
+    <div class="nav-content">
+      <span class="nav-text">{{ currentPage }}</span>
+    </div>
+  </nav>
+</header>

@@ -1,0 +1,485 @@
+<!-- Header Component -->
+<app-header 
+  currentPage="Meu Portal"
+  userName="Usuário"
+  userRole="CIDADÃO">
+</app-header>
+
+<div class="dashboard-container">
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Meu Portal</h1>
+      <p class="dashboard-subtitle">Acompanhe suas solicitações e status</p>
+    </div>
+    <div class="flex gap-4">
+      <button type="button" class="btn btn-primary" (click)="abrirFormAE = !abrirFormAE">
+        <i class="fas fa-clipboard"></i>
+        Novo Nada Opor
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="abrirFormPL = !abrirFormPL">
+        <i class="fas fa-microphone"></i>
+        Nova Palestra
+      </button>
+    </div>
+  </header>
+
+  <!-- Alertas -->
+  <div *ngIf="msg" class="alert alert-success">{{ msg }}</div>
+  <div *ngIf="erro" class="alert alert-error">{{ erro }}</div>
+
+  <!-- Métricas Cards -->
+  <section class="grid grid-cols-4 mb-8">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-file-alt"></i></div>
+        <div class="card-content">
+          <h3>Minhas Autorizações</h3>
+          <div class="card-value">{{ meusAE.length || 0 }}</div>
+          <p class="card-description">Total de solicitações</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-microphone"></i></div>
+        <div class="card-content">
+          <h3>Minhas Palestras</h3>
+          <div class="card-value">{{ minhasPL.length || 0 }}</div>
+          <p class="card-description">Total de solicitações</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div class="card-content">
+          <h3>Em Análise</h3>
+          <div class="card-value">{{ getEmAnaliseCount() }}</div>
+          <p class="card-description">Aguardando resposta</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="card-content">
+          <h3>Aprovadas</h3>
+          <div class="card-value">{{ getAprovadasCount() }}</div>
+          <p class="card-description">Solicitações aprovadas</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formulário: Novo Nada Opor -->
+  <section *ngIf="abrirFormAE" class="card mb-8">
+    <h3 class="mb-4">Novo Nada Opor</h3>
+    <form [formGroup]="formAE" (ngSubmit)="criarAE()" class="grid grid-cols-2 gap-4">
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input type="text" class="form-input" formControlName="titulo" placeholder="Nome do evento">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Tipo de evento</label>
+        <input type="text" class="form-input" formControlName="tipo_evento" placeholder="Ex: feira, show, congresso">
+      </div>
+      
+      <div class="form-group" style="grid-column: 1/-1;">
+        <label class="form-label">Descrição</label>
+        <textarea class="form-textarea" formControlName="descricao" placeholder="Descreva o evento"></textarea>
+      </div>
+
+      <!-- ==========================
+           Seção de Endereço (AE)
+           CEP no topo
+      =========================== -->
+      <div class="form-group">
+        <label class="form-label">CEP</label>
+        <input
+          type="text"
+          class="form-input"
+          formControlName="cep"
+          placeholder="00000-000"
+          maxlength="9"
+          (input)="onCepInput(formAE)"
+        >
+        <small class="text-warning" *ngIf="formAE.get('cep')?.errors?.['invalidCep']">
+          CEP inválido ou não encontrado.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Endereço</label>
+        <input type="text" class="form-input" formControlName="endereco" placeholder="Endereço completo">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Bairro</label>
+        <input type="text" class="form-input" formControlName="bairro" placeholder="Nome do bairro">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Cidade</label>
+        <input type="text" class="form-input" formControlName="cidade" placeholder="Nome da cidade">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">UF</label>
+        <input type="text" class="form-input" formControlName="estado" maxlength="2" placeholder="RJ">
+      </div>
+      <!-- ========================== -->
+
+      <div class="form-group">
+        <label class="form-label">Data de Início</label>
+        <input type="datetime-local" class="form-input" formControlName="data_inicio">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Data de Fim</label>
+        <input type="datetime-local" class="form-input" formControlName="data_fim">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Público estimado</label>
+        <input type="number" class="form-input" formControlName="publico_estimado" min="0" placeholder="Número de pessoas">
+      </div>
+      
+      <div class="form-group" style="grid-column: 1/-1;">
+        <label class="form-label">Observações</label>
+        <textarea class="form-textarea" formControlName="observacoes" placeholder="Observações adicionais"></textarea>
+      </div>
+      
+      <div style="grid-column: 1/-1;">
+        <button type="submit" class="btn btn-primary" [disabled]="formAE.invalid">
+          <i class="fas fa-upload"></i>
+          Enviar Solicitação
+        </button>
+      </div>
+    </form>
+    
+    <details class="mt-6">
+      <summary class="font-semibold text-primary cursor-pointer"><i class="fas fa-calendar-alt"></i> Prazos para entrada do pedido</summary>
+      <ul class="mt-2 ml-4">
+        <li>Pequeno porte (até 2.000 pessoas): <strong>40 dias</strong> de antecedência</li>
+        <li>Médio porte (2.001 a 20.000 pessoas): <strong>50 dias</strong> de antecedência</li>
+        <li>Grande porte (acima de 20.001 pessoas): <strong>70 dias</strong> (verificar peculiaridades)</li>
+      </ul>
+    </details>
+  </section>
+
+  <!-- Formulário: Nova Palestra -->
+  <section *ngIf="abrirFormPL" class="card mb-8">
+    <h3 class="mb-4">Novo pedido de Palestra/Representante</h3>
+    <form [formGroup]="formPL" (ngSubmit)="criarPL()" class="grid grid-cols-2 gap-4">
+      <div class="form-group">
+        <label class="form-label">Organização</label>
+        <input type="text" class="form-input" formControlName="organizacao" placeholder="Nome da organização">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Temas</label>
+        <input type="text" class="form-input" formControlName="temas" placeholder="ex.: trânsito, violência doméstica">
+      </div>
+
+      <!-- ==========================
+           Seção de Endereço (PL)
+           CEP no topo
+      =========================== -->
+      <div class="form-group">
+        <label class="form-label">CEP</label>
+        <input
+          type="text"
+          class="form-input"
+          formControlName="cep"
+          placeholder="00000-000"
+          maxlength="9"
+          (input)="onCepInput(formPL)"
+        >
+        <small class="text-warning" *ngIf="formPL.get('cep')?.errors?.['invalidCep']">
+          CEP inválido ou não encontrado.
+        </small>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Endereço</label>
+        <input type="text" class="form-input" formControlName="endereco" placeholder="Endereço completo">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Bairro</label>
+        <input type="text" class="form-input" formControlName="bairro" placeholder="Nome do bairro">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Cidade</label>
+        <input type="text" class="form-input" formControlName="cidade" placeholder="Nome da cidade">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">UF</label>
+        <input type="text" class="form-input" formControlName="estado" maxlength="2" placeholder="RJ">
+      </div>
+      <!-- ========================== -->
+      
+      <div class="form-group">
+        <label class="form-label">Público-alvo</label>
+        <input type="text" class="form-input" formControlName="publico_alvo" placeholder="Ex: colaboradores, estudantes">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Quantidade de pessoas</label>
+        <input type="number" class="form-input" formControlName="qtd_pessoas" min="0" placeholder="Número de pessoas">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Data sugerida</label>
+        <input type="datetime-local" class="form-input" formControlName="data_sugerida">
+      </div>
+      
+      <div class="form-group" style="grid-column: 1/-1;">
+        <label class="form-label">Observações</label>
+        <textarea class="form-textarea" formControlName="observacoes" placeholder="Observações adicionais"></textarea>
+      </div>
+      
+      <div style="grid-column: 1/-1;">
+        <button type="submit" class="btn btn-primary" [disabled]="formPL.invalid">
+          <i class="fas fa-upload"></i>
+          Enviar Solicitação
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Navegação por Abas -->
+  <nav class="flex gap-2 mb-6">
+    <button 
+      class="btn" 
+      [class.btn-primary]="tab==='AE'"
+      [class.btn-secondary]="tab!=='AE'"
+      (click)="tab='AE'">
+      <i class="fas fa-clipboard"></i> Minhas Autorizações
+    </button>
+    <button 
+      class="btn" 
+      [class.btn-primary]="tab==='PL'"
+      [class.btn-secondary]="tab!=='PL'"
+      (click)="tab='PL'">
+      <i class="fas fa-microphone"></i> Minhas Palestras
+    </button>
+  </nav>
+
+  <!-- Lista: Nada Opor -->
+  <section *ngIf="tab==='AE'">
+    <div *ngIf="carregandoLista" class="text-center p-8">
+      <div class="loading mb-2"></div>
+      <p class="text-muted">Carregando suas solicitações...</p>
+    </div>
+    
+    <div *ngIf="erroLista" class="alert alert-error">{{ erroLista }}</div>
+
+    <div *ngIf="!carregandoLista && meusAE?.length" class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Título</th>
+            <th>Cidade/UF</th>
+            <th>Status</th>
+            <th>Criado</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let it of meusAE">
+            <tr>
+              <td><strong>{{ it.protocolo }}</strong></td>
+              <td>{{ it.titulo }}</td>
+              <td>{{ it.cidade }} / {{ it.estado }}</td>
+              <td>
+                <span class="badge badge-{{ it.status.toLowerCase().replace('_', '-') }}">
+                  {{ it.status }}
+                </span>
+                <div *ngIf="it.status === 'PENDENTE'" class="text-warning font-medium mt-1">
+                  <i class="fas fa-exclamation-triangle"></i> Pendência
+                </div>
+              </td>
+              <td>{{ it.criado_em | date:'short' }}</td>
+              <td>
+                <button type="button" class="btn btn-sm btn-secondary" (click)="abrirDetalheAE(it.protocolo)">
+                  <i class="fas fa-eye"></i> {{ protocoloAberto===it.protocolo ? 'Fechar' : 'Detalhes' }}
+                </button>
+              </td>
+            </tr>
+
+            <!-- Detalhes Expandidos -->
+            <tr *ngIf="protocoloAberto===it.protocolo">
+              <td colspan="6" style="background: var(--gray-50);">
+                <div *ngIf="!detalheAE" class="text-center p-4">
+                  <div class="loading mb-2"></div>
+                  <p class="text-muted">Carregando detalhes...</p>
+                </div>
+                
+                <div *ngIf="detalheAE" class="p-4">
+                  <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div><strong>Título:</strong> {{ detalheAE?.titulo }}</div>
+                    <div><strong>Tipo:</strong> {{ detalheAE?.tipo_evento || '—' }}</div>
+                    <div><strong>Cidade/UF:</strong> {{ detalheAE?.cidade }} / {{ detalheAE?.estado }}</div>
+                    <div><strong>CEP:</strong> {{ detalheAE?.cep || '—' }}</div>
+                    <div><strong>Início:</strong> {{ detalheAE?.data_inicio | date:'short' }}</div>
+                    <div><strong>Fim:</strong> {{ detalheAE?.data_fim | date:'short' }}</div>
+                    <div><strong>Público estimado:</strong> {{ detalheAE?.publico_estimado || '—' }}</div>
+                    <div><strong>Status:</strong> 
+                      <span class="badge badge-{{ detalheAE?.status.toLowerCase().replace('_', '-') }}">
+                        {{ detalheAE?.status }}
+                      </span>
+                    </div>
+                    <div style="grid-column: 1/-1;"><strong>Endereço:</strong> {{ detalheAE?.endereco }}, {{ detalheAE?.bairro }}</div>
+                    <div style="grid-column: 1/-1;"><strong>Descrição:</strong><br>{{ detalheAE?.descricao || '—' }}</div>
+                    <div style="grid-column: 1/-1;"><strong>Observações:</strong><br>{{ detalheAE?.observacoes || '—' }}</div>
+                    <div *ngIf="detalheAE?.status === 'PENDENTE'" style="grid-column: 1/-1;" class="alert alert-warning">
+                      <strong><i class="fas fa-exclamation-triangle"></i> Pendência:</strong><br>{{ detalheAE?.pendencia_obs || '—' }}
+                    </div>
+                  </div>
+
+                  <!-- Seção de Anexos -->
+                  <div class="mt-6">
+                    <h4 class="mb-4"><i class="fas fa-paperclip"></i> Anexos</h4>
+                    <p class="text-muted mb-4">
+                      Formatos: PDF, JPG, PNG. Máximo: 10 MB por arquivo.
+                    </p>
+
+                    <!-- Upload de Anexos -->
+                    <div *ngIf="podeAnexar" class="grid grid-cols-2 gap-6 mb-6">
+                      <div>
+                        <h5 class="font-semibold mb-3"><i class="fas fa-clipboard-list"></i> Obrigatórios</h5>
+                        <div *ngFor="let d of tipoDocsObrig" class="card mb-3">
+                          <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">{{ d.label }}</span>
+                            <span *ngIf="uploading[d.key]" class="loading"></span>
+                          </div>
+                          <div class="flex gap-2 items-center">
+                            <input type="file" (change)="onEscolherArquivo(d.key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="form-input">
+                            <button type="button" class="btn btn-sm btn-primary" (click)="enviarArquivo(d.key)" [disabled]="!arquivosSelecionados[d.key]">
+                              <i class="fas fa-upload"></i> Anexar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h5 class="font-semibold mb-3"><i class="fas fa-file-alt"></i> Condicionais</h5>
+                        <div *ngFor="let d of tipoDocsCond" class="card mb-3">
+                          <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">{{ d.label }}</span>
+                            <span *ngIf="uploading[d.key]" class="loading"></span>
+                          </div>
+                          <div class="flex gap-2 items-center">
+                            <input type="file" (change)="onEscolherArquivo(d.key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="form-input">
+                            <button type="button" class="btn btn-sm btn-primary" (click)="enviarArquivo(d.key)" [disabled]="!arquivosSelecionados[d.key]">
+                              <i class="fas fa-upload"></i> Anexar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Lista de Anexos -->
+                    <div *ngIf="anexos?.length" class="table-container">
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th>Nome</th>
+                            <th>Tamanho</th>
+                            <th>Enviado em</th>
+                            <th>Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let a of anexos">
+                            <td>{{ a.nome_original }}</td>
+                            <td>{{ a.tamanho_bytes | number }} bytes</td>
+                            <td>{{ a.criado_em | date:'short' }}</td>
+                            <td>
+                              <div class="flex gap-2">
+                                <button type="button" class="btn btn-sm btn-secondary" (click)="baixar(a)">
+                                  <i class="fas fa-download"></i> Baixar
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" (click)="excluir(a)" *ngIf="podeAnexar">
+                                  <i class="fas fa-trash"></i> Excluir
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    <div *ngIf="!anexos?.length" class="text-center p-8">
+                      <div class="text-4xl mb-2"><i class="fas fa-folder-open"></i></div>
+                      <p class="text-muted">Nenhum anexo enviado ainda.</p>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!carregandoLista && !meusAE?.length" class="text-center p-8">
+      <div class="text-4xl mb-4"><i class="fas fa-clipboard"></i></div>
+      <h3 class="mb-2">Nenhuma solicitação encontrada</h3>
+      <p class="text-muted mb-4">Você ainda não tem solicitações de Nada Opor.</p>
+      <button type="button" class="btn btn-primary btn-lg" (click)="abrirFormAE = true">
+        <i class="fas fa-pen-to-square"></i> Fazer Primeira Solicitação
+      </button>
+    </div>
+  </section>
+
+  <!-- Lista: Palestras -->
+  <section *ngIf="tab==='PL'">
+    <div *ngIf="minhasPL?.length" class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Organização</th>
+            <th>Cidade/UF</th>
+            <th>Temas</th>
+            <th>Status</th>
+            <th>Criado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let it of minhasPL">
+            <td><strong>{{ it.protocolo }}</strong></td>
+            <td>{{ it.organizacao || '—' }}</td>
+            <td>{{ it.cidade }} / {{ it.estado }}</td>
+            <td>{{ it.temas }}</td>
+            <td>
+              <span class="badge badge-{{ it.status.toLowerCase().replace('_', '-') }}">
+                {{ it.status }}
+              </span>
+            </td>
+            <td>{{ it.criado_em | date:'short' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div *ngIf="!minhasPL?.length" class="text-center p-8">
+      <div class="text-4xl mb-4"><i class="fas fa-microphone"></i></div>
+      <h3 class="mb-2">Nenhuma solicitação encontrada</h3>
+      <p class="text-muted mb-4">Você ainda não tem solicitações de Palestras.</p>
+      <button type="button" class="btn btn-primary btn-lg" (click)="abrirFormPL = true">
+        <i class="fas fa-pen-to-square"></i> Fazer Primeira Solicitação
+      </button>
+    </div>
+  </section>
+</div>

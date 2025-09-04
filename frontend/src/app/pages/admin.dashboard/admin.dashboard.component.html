@@ -1,0 +1,214 @@
+<!-- Header Component -->
+<app-header 
+  currentPage="Dashboard do Administrador"
+  userName="Admin PMERJ"
+  userRole="ADMINISTRADOR">
+</app-header>
+
+<div class="dashboard-container">
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">Dashboard do Administrador</h1>
+      <p class="dashboard-subtitle">Gerencie solicitações e autorizações</p>
+    </div>
+    
+  </header>
+
+  <!-- Alertas -->
+  <div *ngIf="msg" class="alert alert-success">{{ msg }}</div>
+  <div *ngIf="erro" class="alert alert-error">{{ erro }}</div>
+
+  <!-- Filtros -->
+  <section class="card mb-6">
+    <h3 class="mb-4"><i class="fas fa-search"></i> Filtros de Busca</h3>
+    <form [formGroup]="filtros" (ngSubmit)="buscar()" class="grid grid-cols-4 gap-4">
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" formControlName="tipo">
+          <option value="">Todos</option>
+          <option value="AE">Nada Opor</option>
+          <option value="PL">Eventos</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <input
+          class="form-input"
+          formControlName="status"
+          placeholder="RECEBIDA, EM_ANALISE, PENDENTE...">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Protocolo</label>
+        <input
+          class="form-input"
+          formControlName="protocolo"
+          placeholder="Número do protocolo">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input
+          class="form-input"
+          formControlName="titulo"
+          placeholder="Nome do evento">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Cidade</label>
+        <input
+          class="form-input"
+          formControlName="cidade"
+          placeholder="Nome da cidade">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Data Início</label>
+        <input
+          type="date"
+          class="form-input"
+          formControlName="data_inicio">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Data Fim</label>
+        <input
+          type="date"
+          class="form-input"
+          formControlName="data_fim">
+      </div>
+      
+      <div style="grid-column: 1/-1;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search"></i>
+          Filtrar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Loading -->
+  <div *ngIf="carregando" class="text-center p-8">
+    <div class="loading mb-2"></div>
+    <p class="text-muted">Carregando registros...</p>
+  </div>
+
+  <!-- Lista de Registros -->
+  <div *ngIf="!carregando && registros?.length" class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Protocolo</th>
+          <th>Título</th>
+          <th>Cidade/UF</th>
+          <th>Status</th>
+          <th>Criado</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of registros">
+          <td><strong>{{ r.protocolo }}</strong></td>
+          <td>{{ r.titulo }}</td>
+          <td>{{ r.cidade }} / {{ r.estado }}</td>
+          <td>
+            <span class="badge badge-{{ r.status.toLowerCase().replace('_', '-') }}">
+              {{ r.status }}
+            </span>
+          </td>
+          <td>{{ r.criado_em | date:'short' }}</td>
+          <td>
+            <div class="flex gap-2">
+              <select 
+                class="form-input form-input-sm" 
+                [value]="r.status"
+                #statusSelect
+                (change)="atualizarStatus(r.protocolo, statusSelect.value)">
+                <option value="RECEBIDA">RECEBIDA</option>
+                <option value="EM_ANALISE">EM_ANALISE</option>
+                <option value="PENDENTE">PENDENTE</option>
+                <option value="APROVADA">APROVADA</option>
+                <option value="RECUSADA">RECUSADA</option>
+                <option value="FINALIZADA">FINALIZADA</option>
+                <option value="CANCELADA">CANCELADA</option>
+              </select>
+              <button class="btn btn-sm btn-secondary" (click)="verDetalhe(r)"><i class="fas fa-eye"></i> Ver</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Estado Vazio -->
+  <div *ngIf="!carregando && !registros?.length" class="text-center p-8">
+    <div class="text-4xl mb-4"><i class="fas fa-clipboard"></i></div>
+    <h3 class="mb-2">Nenhum registro encontrado</h3>
+    <p class="text-muted">Não há solicitações que correspondam aos filtros aplicados.</p>
+  </div>
+
+  <!-- Detalhe do Registro -->
+  <section *ngIf="detalhe" class="card mt-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="mb-0"><i class="fas fa-folder-open"></i> Detalhes do Processo ({{ detalheOrigem }})</h3>
+      <button class="btn btn-secondary btn-sm" (click)="fecharDetalhe()"><i class="fas fa-times"></i> Fechar</button>
+    </div>
+
+    <div *ngIf="carregandoDetalhe" class="text-center p-4">
+      <div class="loading mb-2"></div>
+      <p class="text-muted">Carregando detalhes...</p>
+    </div>
+
+    <div *ngIf="!carregandoDetalhe" class="grid grid-cols-2 gap-4">
+      <div>
+        <h4 class="mb-2">Informações</h4>
+        <div><strong>Protocolo:</strong> {{ detalhe?.protocolo }}</div>
+        <div><strong>Título/Organização:</strong> {{ detalhe?.titulo || detalhe?.organizacao }}</div>
+        <div *ngIf="detalhe?.tipo_evento"><strong>Tipo:</strong> {{ detalhe?.tipo_evento }}</div>
+        <div><strong>Cidade/UF:</strong> {{ detalhe?.cidade }} / {{ detalhe?.estado }}</div>
+        <div *ngIf="detalhe?.cep"><strong>CEP:</strong> {{ detalhe?.cep }}</div>
+        <div *ngIf="detalhe?.data_inicio"><strong>Início:</strong> {{ detalhe?.data_inicio | date:'short' }}</div>
+        <div *ngIf="detalhe?.data_fim"><strong>Fim:</strong> {{ detalhe?.data_fim | date:'short' }}</div>
+        <div *ngIf="detalhe?.data_sugerida"><strong>Data sugerida:</strong> {{ detalhe?.data_sugerida | date:'short' }}</div>
+        <div *ngIf="detalhe?.publico_estimado"><strong>Público estimado:</strong> {{ detalhe?.publico_estimado }}</div>
+        <div *ngIf="detalhe?.qtd_pessoas"><strong>Qtd pessoas:</strong> {{ detalhe?.qtd_pessoas }}</div>
+        <div><strong>Status:</strong> <span class="badge badge-{{ (detalhe?.status||'').toLowerCase().replace('_','-') }}">{{ detalhe?.status }}</span></div>
+      </div>
+      <div>
+        <h4 class="mb-2">Endereço</h4>
+        <div>{{ detalhe?.endereco }}</div>
+        <div>{{ detalhe?.bairro }}</div>
+        <div class="mt-3"><strong>Descrição/Observações:</strong><br>{{ detalhe?.descricao || detalhe?.observacoes || '—' }}</div>
+      </div>
+    </div>
+
+    <!-- Anexos (apenas AE) -->
+    <div *ngIf="detalheOrigem==='AE'" class="mt-6">
+      <h4 class="mb-2"><i class="fas fa-paperclip"></i> Anexos</h4>
+      <div *ngIf="anexos?.length" class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Tamanho</th>
+              <th>Enviado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of anexos">
+              <td>{{ a.nome_original }}</td>
+              <td>{{ a.tamanho_bytes | number }} bytes</td>
+              <td>{{ a.criado_em | date:'short' }}</td>
+              <td>
+                <button class="btn btn-sm btn-secondary" (click)="baixarAnexo(a)"><i class="fas fa-download"></i> Baixar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!anexos?.length" class="text-muted">Nenhum anexo.</div>
+    </div>
+  </section>
+</div>
